@@ -3,11 +3,11 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QR Chess – Online Schach</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperChess</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -15,63 +15,54 @@
 
 body {
   margin: 0;
-  padding: 20px;
-  min-height: 100vh;
-  background: linear-gradient(135deg,#101827,#202d50);
+  background: #101827;
   color: white;
-  font-family: Arial,sans-serif;
+  font-family: Arial, sans-serif;
   text-align: center;
 }
 
-.container {
-  max-width: 520px;
-  margin: auto;
+header {
+  padding: 22px;
+  background: #17243a;
 }
 
 h1 {
-  color: #70e0a0;
+  margin: 0;
+  color: #f5c451;
   font-size: 38px;
 }
 
-.panel {
-  background: #202d40;
-  padding: 15px;
+main {
+  width: min(95%, 560px);
+  margin: 25px auto;
+}
+
+#status {
+  background: #24344e;
+  padding: 14px;
   border-radius: 12px;
-  margin: 15px 0;
-}
-
-button {
-  border: 0;
-  border-radius: 9px;
-  padding: 12px 18px;
-  margin: 5px;
-  background: #70e0a0;
-  color: #102018;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: .4;
-  cursor: not-allowed;
+  margin-bottom: 15px;
+  font-size: 17px;
 }
 
 #board {
   display: grid;
-  grid-template-columns: repeat(8,1fr);
-  width: min(92vw,440px);
-  margin: 20px auto;
-  border: 5px solid #303d50;
+  grid-template-columns: repeat(8, 1fr);
+  width: 100%;
+  aspect-ratio: 1;
+  border: 5px solid #29384e;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 .square {
-  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: clamp(25px,8vw,48px);
+  font-size: clamp(24px, 8vw, 52px);
   cursor: pointer;
-  user-select: none;
   position: relative;
 }
 
@@ -79,430 +70,342 @@ button:disabled {
 .dark { background: #b58863; }
 
 .selected {
-  background: #baca44 !important;
+  background: #e9d44b !important;
 }
 
 .target::after {
   content: "";
-  position: absolute;
-  width: 25%;
-  height: 25%;
+  width: 22%;
+  height: 22%;
   border-radius: 50%;
-  background: #276b36aa;
+  background: #287b45;
+  position: absolute;
 }
 
-.capture::after {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  border: 5px solid #276b36aa;
-  border-radius: 50%;
-}
-
-#status {
-  font-size: 17px;
+button.action {
+  border: 0;
+  padding: 12px 17px;
+  margin: 7px 3px;
+  border-radius: 9px;
+  background: #f5c451;
+  color: #17243a;
   font-weight: bold;
-  color: #70e0a0;
+  cursor: pointer;
 }
 
-#qr {
-  display: flex;
-  justify-content: center;
-  margin: 15px;
+button.action:hover { background: #ffda78; }
+
+.panel {
+  margin-top: 20px;
+  padding: 17px;
+  border-radius: 12px;
+  background: #1c2a40;
+}
+
+#qrcode {
+  background: white;
+  padding: 10px;
+  width: fit-content;
+  margin: 12px auto;
 }
 
 #invite {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  background: #101827;
-  color: white;
-  border: 1px solid #718096;
-}
-
-#history {
-  overflow-wrap: anywhere;
-  font-size: 13px;
-  color: #ccd5e2;
+  padding: 10px;
+  border-radius: 7px;
+  border: 0;
 }
 
 .small {
-  color: #aab7c9;
+  color: #bdc9da;
   font-size: 13px;
 }
 </style>
 </head>
 
 <body>
+<header>
+  <h1>♟ SuperChess</h1>
+  <p>Spiele Schach mit deinen Freunden</p>
+</header>
 
-<div class="container">
+<main>
+  <div id="status">Spiel wird geladen ...</div>
 
-<h1>♟ QR CHESS</h1>
-<p>Fordere deine Freunde zum Schach heraus!</p>
+  <div id="board"></div>
 
-<div class="panel">
-  <div id="status">Erstelle eine Partie oder tritt einer bei.</div>
-  <p id="connection">Nicht verbunden</p>
-</div>
+  <div>
+    <button class="action" onclick="newGame()">Neues Spiel</button>
+    <button class="action" onclick="flipBoard()">Brett drehen</button>
+  </div>
 
-<button onclick="createGame()">♔ Spiel erstellen</button>
-<button onclick="joinGame()">♚ Spiel beitreten</button>
-
-<div class="panel" id="inviteArea" hidden>
-  <h3>📱 Freunde einladen</h3>
-  <div id="qr"></div>
-  <input id="invite" readonly>
-  <button onclick="copyInvite()">Link kopieren</button>
-</div>
-
-<div id="board"></div>
-
-<div class="panel">
-  <div id="turn">Warte auf ein Spiel...</div>
-  <p id="history">Züge erscheinen hier.</p>
-</div>
-
-<button onclick="undoMove()" id="undoButton" disabled>↩ Letzten Zug zurücknehmen</button>
-<button onclick="newGame()" id="newButton" disabled>🔄 Neue Partie</button>
-
-<p class="small">QR CHESS · ONLINE MULTIPLAYER</p>
-
-</div>
+  <div class="panel">
+    <h2>Freund einladen</h2>
+    <p id="connection">Verbindung wird vorbereitet ...</p>
+    <div id="qrcode"></div>
+    <input id="invite" readonly placeholder="Einladungslink erscheint hier">
+    <button class="action" onclick="copyInvite()">Link kopieren</button>
+    <p class="small">Teile den Link oder QR-Code mit deinem Freund.</p>
+  </div>
+</main>
 
 <script>
-const chess = new Chess();
-
-const icons = {
-  wp:"♙",wn:"♘",wb:"♗",wr:"♖",wq:"♕",wk:"♔",
-  bp:"♟",bn:"♞",bb:"♝",br:"♜",bq:"♛",bk:"♚"
-};
-
-let peer = null;
-let connection = null;
-let color = null;
-let selected = null;
-let connected = false;
-let history = [];
+const game = new Chess();
 
 const board = document.getElementById("board");
+const statusBox = document.getElementById("status");
+const connectionBox = document.getElementById("connection");
+const inviteInput = document.getElementById("invite");
 
-function draw() {
-  board.innerHTML = "";
+const pieces = {
+  wK:"♔", wQ:"♕", wR:"♖", wB:"♗", wN:"♘", wP:"♙",
+  bK:"♚", bQ:"♛", bR:"♜", bB:"♝", bN:"♞", bP:"♟"
+};
 
-  const files = "abcdefgh";
+let peer;
+let connection = null;
+let role = "waiting";
+let selected = null;
+let legalTargets = [];
+let flipped = false;
 
-  for (let r=0;r<8;r++) {
-    for (let c=0;c<8;c++) {
-      const square = files[c]+(8-r);
-      const piece = chess.get(square);
-      const div = document.createElement("div");
+const params = new URLSearchParams(location.search);
+const hostId = params.get("join");
 
-      div.className = "square " +
-        ((r+c)%2===0 ? "light":"dark");
-
-      if (selected===square)
-        div.classList.add("selected");
-
-      if (selected) {
-        const possible = chess.moves({
-          square:selected,
-          verbose:true
-        }).find(m=>m.to===square);
-
-        if (possible)
-          div.classList.add(piece ? "capture":"target");
-      }
-
-      if (piece) {
-        div.textContent = icons[
-          piece.color + piece.type
-        ];
-      }
-
-      div.onclick = () => clickSquare(square);
-      board.appendChild(div);
-    }
-  }
-
-  updateStatus();
-}
-
-function updateStatus() {
-  let message = chess.turn()==="w" ? "Weiß" : "Schwarz";
-
-  if (chess.isCheckmate()) {
-    message = "♚ SCHACHMATT! " +
-      (chess.turn()==="w" ? "Schwarz" : "Weiß") +
-      " gewinnt!";
-  } else if (chess.in_draw()) {
-    message = "Partie unentschieden!";
-  } else {
-    message += " ist am Zug.";
-    if (chess.in_check()) message += " SCHACH!";
-  }
-
-  document.getElementById("status").textContent = message;
-
-  document.getElementById("turn").textContent =
-    "Du spielst: " +
-    (color==="w" ? "Weiß" :
-     color==="b" ? "Schwarz" : "Zuschauer");
-
-  document.getElementById("history").textContent =
-    chess.pgn() || "Noch keine Züge.";
-
-  document.getElementById("undoButton").disabled =
-    !connected || !history.length || chess.game_over();
-
-  document.getElementById("newButton").disabled =
-    !connected || color!=="w";
-}
-
-function clickSquare(square) {
-  if (!connected || chess.game_over()) return;
-  if (chess.turn()!==color) return;
-
-  const piece = chess.get(square);
-
-  if (!selected) {
-    if (piece && piece.color===color) {
-      selected=square;
-      draw();
-    }
+function start() {
+  if (typeof Chess === "undefined" ||
+      typeof Peer === "undefined" ||
+      typeof QRCode === "undefined") {
+    statusBox.textContent =
+      "Fehler: Eine Bibliothek konnte nicht geladen werden. Bitte Seite neu laden.";
     return;
   }
 
-  if (piece && piece.color===color) {
-    selected=square;
-    draw();
-    return;
-  }
+  peer = new Peer();
 
-  sendMove(selected,square);
-}
+  peer.on("open", id => {
+    if (hostId) {
+      role = "guest";
+      connectionBox.textContent = "Verbinde mit dem Spiel ...";
+      connection = peer.connect(hostId, { reliable: true });
+      setupConnection(connection);
+    } else {
+      role = "host";
+      connectionBox.textContent = "Du bist Spieler Weiß. Warte auf deinen Freund.";
+      const url = location.origin + location.pathname + "?join=" + id;
+      inviteInput.value = url;
 
-function sendMove(from,to) {
-  if (color==="w") {
-    makeMove(from,to);
-  } else {
-    connection.send({
-      type:"move",
-      from:from,
-      to:to,
-      promotion:"q"
-    });
-  }
-  selected=null;
-  draw();
-}
-
-function makeMove(from,to,promotion="q") {
-  const move=chess.move({
-    from:from,
-    to:to,
-    promotion:promotion
-  });
-
-  if (!move) return false;
-
-  history.push(move);
-  broadcastState();
-  draw();
-  return true;
-}
-
-function broadcastState() {
-  if (connection && connection.open) {
-    connection.send({
-      type:"state",
-      fen:chess.fen(),
-      pgn:chess.pgn()
-    });
-  }
-}
-
-function setupConnection(conn) {
-  connection=conn;
-
-  conn.on("open",()=>{
-    connected=true;
-
-    document.getElementById("connection").textContent =
-      "🟢 Freund verbunden!";
-
-    if (color==="w") broadcastState();
-
-    draw();
-  });
-
-  conn.on("data",data=>{
-
-    // Gast sendet einen Zug an Weiß
-    if (data.type==="move" && color==="w") {
-      if (chess.turn()!=="b") return;
-
-      makeMove(data.from,data.to,data.promotion);
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), {
+        text: url,
+        width: 180,
+        height: 180
+      });
     }
 
-    // Weiß überträgt den Spielstand an Schwarz
-    if (data.type==="state" && color==="b") {
-      try {
-        chess.load(data.fen);
-        history=[];
-        selected=null;
-        draw();
-      } catch(e) {
-        console.error("Ungültiger Spielstand",e);
-      }
-    }
-
-    // Neue Partie
-    if (data.type==="reset" && color==="b") {
-      chess.reset();
-      history=[];
-      selected=null;
-      draw();
-    }
-
-    // Letzten Zug zurücknehmen
-    if (data.type==="undo" && color==="b") {
-      chess.undo();
-      history=[];
-      selected=null;
-      draw();
-    }
+    render();
   });
 
-  conn.on("close",()=>{
-    connected=false;
-    document.getElementById("connection").textContent =
-      "🔴 Verbindung getrennt";
-    draw();
-  });
-}
+  peer.on("connection", conn => {
+    if (role !== "host") return;
 
-function createGame() {
-  if (peer) peer.destroy();
-
-  color="w";
-  chess.reset();
-  history=[];
-  selected=null;
-  connected=false;
-
-  peer=new Peer();
-
-  document.getElementById("status").textContent =
-    "Erstelle deine Einladung...";
-
-  peer.on("open",id=>{
-
-    const url=new URL(location.href);
-    url.search="";
-    url.searchParams.set("join",id);
-
-    document.getElementById("inviteArea").hidden=false;
-    document.getElementById("invite").value=url.toString();
-
-    document.getElementById("qr").innerHTML="";
-
-    new QRCode(document.getElementById("qr"),{
-      text:url.toString(),
-      width:200,
-      height:200
-    });
-
-    document.getElementById("connection").textContent =
-      "Warte auf deinen Freund...";
-
-    draw();
-  });
-
-  peer.on("connection",conn=>{
     if (connection && connection.open) {
       conn.close();
       return;
     }
+
+    connection = conn;
     setupConnection(conn);
   });
 
-  peer.on("error",e=>{
-    document.getElementById("status").textContent =
-      "Fehler: "+e.type;
+  peer.on("error", err => {
+    connectionBox.textContent = "Verbindungsfehler: " + err.type;
   });
 }
 
-function joinGame() {
-  const id=new URLSearchParams(location.search).get("join")
-    || prompt("Einladungs-ID eingeben:");
+function setupConnection(conn) {
+  conn.on("open", () => {
+    connectionBox.textContent =
+      role === "host" ? "Freund verbunden! Du spielst Weiß." :
+      "Verbunden! Du spielst Schwarz.";
 
-  if (!id) return;
-
-  if (peer) peer.destroy();
-
-  color="b";
-  chess.reset();
-  history=[];
-  selected=null;
-  connected=false;
-
-  peer=new Peer();
-
-  document.getElementById("status").textContent =
-    "Verbinde mit deinem Freund...";
-
-  peer.on("open",()=>{
-    const conn=peer.connect(id,{reliable:true});
-    setupConnection(conn);
+    if (role === "host") sendState();
   });
 
-  peer.on("error",()=>{
-    document.getElementById("status").textContent =
-      "Verbindung fehlgeschlagen. Einladung prüfen.";
+  conn.on("data", data => {
+    if (role === "host" && data.type === "move") {
+      if (game.turn() !== "b") return;
+
+      const move = game.move({
+        from: data.from,
+        to: data.to,
+        promotion: "q"
+      });
+
+      if (move) sendState();
+    }
+
+    if (role === "guest" && data.type === "state") {
+      game.load(data.fen);
+      selected = null;
+      legalTargets = [];
+      render();
+    }
+
+    if (role === "guest" && data.type === "reset") {
+      game.reset();
+      render();
+    }
   });
 
-  draw();
+  conn.on("close", () => {
+    connectionBox.textContent = "Verbindung getrennt.";
+  });
 }
 
-function newGame() {
-  if (color!=="w" || !connected) return;
-
-  chess.reset();
-  history=[];
-  selected=null;
-
-  connection.send({type:"reset"});
-  broadcastState();
-  draw();
-}
-
-function undoMove() {
-  if (!connected || !history.length) return;
-
-  if (color==="w") {
-    chess.undo();
-    history.pop();
-    connection.send({type:"undo"});
-    broadcastState();
-    draw();
+function sendState() {
+  if (connection && connection.open) {
+    connection.send({
+      type: "state",
+      fen: game.fen()
+    });
   }
 }
 
+function render() {
+  board.innerHTML = "";
+
+  const files = flipped
+    ? ["h","g","f","e","d","c","b","a"]
+    : ["a","b","c","d","e","f","g","h"];
+
+  const ranks = flipped
+    ? ["1","2","3","4","5","6","7","8"]
+    : ["8","7","6","5","4","3","2","1"];
+
+  ranks.forEach((rank, row) => {
+    files.forEach((file, col) => {
+      const square = file + rank;
+      const piece = game.get(square);
+
+      const cell = document.createElement("button");
+      cell.className = "square " +
+        ((row + col) % 2 === 0 ? "light" : "dark");
+
+      if (selected === square) cell.classList.add("selected");
+      if (legalTargets.includes(square)) cell.classList.add("target");
+
+      if (piece) {
+        cell.textContent = pieces[piece.color + piece.type.toUpperCase()];
+      }
+
+      cell.onclick = () => clickSquare(square);
+      board.appendChild(cell);
+    });
+  });
+
+  updateStatus();
+}
+
+function clickSquare(square) {
+  const piece = game.get(square);
+  const myColor = role === "host" ? "w" : "b";
+
+  if (role === "waiting") return;
+  if (game.game_over()) return;
+  if (game.turn() !== myColor) return;
+
+  if (selected && legalTargets.includes(square)) {
+    makeMove(selected, square);
+    selected = null;
+    legalTargets = [];
+    render();
+    return;
+  }
+
+  if (piece && piece.color === myColor) {
+    selected = square;
+    legalTargets = game.moves({
+      square: square,
+      verbose: true
+    }).map(move => move.to);
+  } else {
+    selected = null;
+    legalTargets = [];
+  }
+
+  render();
+}
+
+function makeMove(from, to) {
+  if (role === "host") {
+    const move = game.move({
+      from: from,
+      to: to,
+      promotion: "q"
+    });
+
+    if (move) sendState();
+  } else if (connection && connection.open) {
+    connection.send({
+      type: "move",
+      from: from,
+      to: to
+    });
+  }
+}
+
+function updateStatus() {
+  if (game.in_checkmate()) {
+    statusBox.textContent = "Schachmatt! " +
+      (game.turn() === "w" ? "Schwarz" : "Weiß") + " gewinnt!";
+  } else if (game.in_draw()) {
+    statusBox.textContent = "Unentschieden!";
+  } else {
+    statusBox.textContent =
+      (game.turn() === "w" ? "Weiß" : "Schwarz") + " ist am Zug" +
+      (game.in_check() ? " – Schach!" : "");
+  }
+}
+
+function newGame() {
+  if (role !== "host") {
+    statusBox.textContent = "Nur Spieler Weiß kann ein neues Spiel starten.";
+    return;
+  }
+
+  game.reset();
+  selected = null;
+  legalTargets = [];
+
+  if (connection && connection.open) {
+    connection.send({ type: "reset" });
+    sendState();
+  }
+
+  render();
+}
+
+function flipBoard() {
+  flipped = !flipped;
+  render();
+}
+
 function copyInvite() {
-  const input=document.getElementById("invite");
-  input.select();
-  navigator.clipboard.writeText(input.value);
-  document.getElementById("status").textContent =
-    "Einladungslink kopiert!";
+  if (!inviteInput.value) return;
+
+  inviteInput.select();
+  navigator.clipboard.writeText(inviteInput.value)
+    .then(() => {
+      connectionBox.textContent = "Einladungslink kopiert!";
+    })
+    .catch(() => {
+      connectionBox.textContent = "Bitte den Link manuell kopieren.";
+    });
 }
 
-// Automatisch beitreten, wenn QR-Link geöffnet wird
-if (new URLSearchParams(location.search).has("join")) {
-  joinGame();
-} else {
-  draw();
-}
+render();
+start();
 </script>
-
 </body>
 </html>
