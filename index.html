@@ -11,9 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -34,10 +32,7 @@ h1 {
   margin: 0;
 }
 
-header p {
-  margin-bottom: 0;
-  color: #d1d9e6;
-}
+header p { color: #d1d9e6; }
 
 main {
   width: 95%;
@@ -53,17 +48,13 @@ main {
   font-size: 17px;
 }
 
-/* SCHACHBRETT */
 #board {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
   width: min(560px, 90vw);
   aspect-ratio: 1 / 1;
-  height: auto;
-
-  margin: 0 auto;
+  margin: auto;
   border: 5px solid #29384e;
   border-radius: 5px;
   overflow: hidden;
@@ -76,36 +67,27 @@ main {
   min-height: 0;
   border: 0;
   padding: 0;
-
   display: flex;
-  justify-content: center;
   align-items: center;
-
+  justify-content: center;
   font-size: clamp(20px, 7vw, 52px);
   cursor: pointer;
   position: relative;
   line-height: 1;
 }
 
-.light {
-  background: #f0d9b5;
-}
+.light { background: #f0d9b5; }
+.dark { background: #b58863; }
 
-.dark {
-  background: #b58863;
-}
-
-.selected {
-  background: #e9d44b !important;
-}
+.selected { background: #e9d44b !important; }
 
 .target::after {
   content: "";
-  width: 23%;
-  height: 23%;
+  position: absolute;
+  width: 22%;
+  height: 22%;
   border-radius: 50%;
   background: #287b45;
-  position: absolute;
 }
 
 .action {
@@ -116,13 +98,18 @@ main {
   background: #f5c451;
   color: #17243a;
   font-weight: bold;
-  font-size: 14px;
   cursor: pointer;
+  font-size: 14px;
 }
 
-.action:hover {
-  background: #ffda78;
+.action:hover { background: #ffda78; }
+
+.resign {
+  background: #d94b4b;
+  color: white;
 }
+
+.resign:hover { background: #f06464; }
 
 .panel {
   margin-top: 20px;
@@ -131,15 +118,14 @@ main {
   background: #1c2a40;
 }
 
-.panel h2 {
-  margin-top: 0;
-}
+.panel h2 { margin-top: 0; }
 
 #qrcode {
   background: white;
   padding: 10px;
   width: fit-content;
   margin: 15px auto;
+  min-height: 10px;
 }
 
 #invite {
@@ -156,14 +142,26 @@ main {
   line-height: 1.5;
 }
 
-@media (max-width: 380px) {
-  h1 {
-    font-size: 30px;
-  }
+#promotion {
+  display: none;
+  background: #24344e;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 12px 0;
+}
 
-  .square {
-    font-size: 22px;
-  }
+.promotion-button {
+  font-size: 30px;
+  margin: 5px;
+  width: 55px;
+  height: 55px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media(max-width:380px) {
+  h1 { font-size: 30px; }
 }
 </style>
 </head>
@@ -172,36 +170,48 @@ main {
 
 <header>
   <h1>♟ SuperChess</h1>
-  <p>Spiele Schach mit deinen Freunden</p>
+  <p>Schach mit Freunden spielen</p>
 </header>
 
 <main>
 
-  <div id="status">Spiel wird geladen ...</div>
+<div id="status">Spiel wird geladen ...</div>
 
-  <div id="board"></div>
+<div id="board"></div>
 
-  <div>
-    <button class="action" onclick="newGame()">Neues Spiel</button>
-    <button class="action" onclick="flipBoard()">Brett drehen</button>
-  </div>
+<div id="promotion">
+  <p>Welche Figur möchtest du wählen?</p>
+  <button class="promotion-button" onclick="promote('q')">♕</button>
+  <button class="promotion-button" onclick="promote('r')">♖</button>
+  <button class="promotion-button" onclick="promote('b')">♗</button>
+  <button class="promotion-button" onclick="promote('n')">♘</button>
+</div>
 
-  <div class="panel">
-    <h2>Freund einladen</h2>
+<div>
+  <button class="action" onclick="flipBoard()">Brett drehen</button>
+  <button class="action resign" onclick="resign()">Aufgeben</button>
+</div>
 
-    <p id="connection">Verbindung wird vorbereitet ...</p>
+<div class="panel">
+  <h2>Neue Partie</h2>
 
-    <div id="qrcode"></div>
+  <p id="connection">Verbindung wird vorbereitet ...</p>
 
-    <input id="invite" readonly placeholder="Einladungslink erscheint hier">
+  <div id="qrcode"></div>
 
-    <button class="action" onclick="copyInvite()">Link kopieren</button>
+  <input id="invite" readonly placeholder="Dein Einladungslink">
 
-    <p class="small">
-      Teile den QR-Code oder Link mit deinem Freund.
-      Beide Spieler müssen online sein.
-    </p>
-  </div>
+  <button class="action" onclick="copyInvite()">Link kopieren</button>
+
+  <button class="action" onclick="newInvite()">
+    Neuen QR-Code erstellen
+  </button>
+
+  <p class="small">
+    Jeder Spieler kann einen neuen QR-Code erstellen
+    und damit eine neue Partie eröffnen.
+  </p>
+</div>
 
 </main>
 
@@ -212,127 +222,50 @@ const board = document.getElementById("board");
 const statusBox = document.getElementById("status");
 const connectionBox = document.getElementById("connection");
 const inviteInput = document.getElementById("invite");
+const promotionBox = document.getElementById("promotion");
 
 const pieces = {
   wK:"♔", wQ:"♕", wR:"♖", wB:"♗", wN:"♘", wP:"♙",
   bK:"♚", bQ:"♛", bR:"♜", bB:"♝", bN:"♞", bP:"♟"
 };
 
-let peer;
+let peer = null;
 let connection = null;
 let role = "waiting";
 let selected = null;
 let legalTargets = [];
 let flipped = false;
+let pendingPromotion = null;
+let ended = false;
+let resultText = "";
+let remoteStatus = "";
 
 const params = new URLSearchParams(location.search);
 const hostId = params.get("join");
 
-function start() {
-  if (typeof Chess === "undefined" ||
-      typeof Peer === "undefined" ||
-      typeof QRCode === "undefined") {
-    statusBox.textContent = "Fehler beim Laden. Bitte Seite neu laden.";
-    return;
+function getStatus() {
+  if (ended) return resultText;
+
+  if (game.in_checkmate()) {
+    return "Schachmatt! " +
+      (game.turn() === "w" ? "Schwarz" : "Weiß") +
+      " gewinnt!";
   }
 
-  peer = new Peer();
+  if (game.in_stalemate()) return "Patt! Unentschieden.";
 
-  peer.on("open", id => {
-    if (hostId) {
-      role = "guest";
-      connectionBox.textContent = "Verbinde mit dem Spiel ...";
-      connection = peer.connect(hostId, { reliable: true });
-      setupConnection(connection);
-    } else {
-      role = "host";
-      connectionBox.textContent =
-        "Du bist Weiß. Warte auf deinen Freund.";
-
-      const url = location.origin + location.pathname + "?join=" + id;
-      inviteInput.value = url;
-
-      document.getElementById("qrcode").innerHTML = "";
-
-      new QRCode(document.getElementById("qrcode"), {
-        text: url,
-        width: 180,
-        height: 180
-      });
-    }
-
-    render();
-  });
-
-  peer.on("connection", conn => {
-    if (role !== "host") return;
-
-    if (connection && connection.open) {
-      conn.close();
-      return;
-    }
-
-    connection = conn;
-    setupConnection(conn);
-  });
-
-  peer.on("error", err => {
-    connectionBox.textContent =
-      "Verbindungsfehler: " + err.type;
-  });
-}
-
-function setupConnection(conn) {
-  conn.on("open", () => {
-    connectionBox.textContent =
-      role === "host"
-        ? "Freund verbunden! Du spielst Weiß."
-        : "Verbunden! Du spielst Schwarz.";
-
-    if (role === "host") sendState();
-  });
-
-  conn.on("data", data => {
-    if (role === "host" && data.type === "move") {
-      if (game.turn() !== "b") return;
-
-      const move = game.move({
-        from: data.from,
-        to: data.to,
-        promotion: "q"
-      });
-
-      if (move) sendState();
-      render();
-    }
-
-    if (role === "guest" && data.type === "state") {
-      game.load(data.fen);
-      selected = null;
-      legalTargets = [];
-      render();
-    }
-
-    if (role === "guest" && data.type === "reset") {
-      game.reset();
-      selected = null;
-      legalTargets = [];
-      render();
-    }
-  });
-
-  conn.on("close", () => {
-    connectionBox.textContent = "Verbindung getrennt.";
-  });
-}
-
-function sendState() {
-  if (connection && connection.open) {
-    connection.send({
-      type: "state",
-      fen: game.fen()
-    });
+  if (game.insufficient_material()) {
+    return "Remis: Nicht genügend Material.";
   }
+
+  if (game.in_threefold_repetition()) {
+    return "Remis: Dreifache Stellungswiederholung.";
+  }
+
+  if (game.in_draw()) return "Remis!";
+
+  return (game.turn() === "w" ? "Weiß" : "Schwarz") +
+    " ist am Zug" + (game.in_check() ? " – Schach!" : "");
 }
 
 function render() {
@@ -356,43 +289,159 @@ function render() {
       cell.className = "square " +
         ((row + col) % 2 === 0 ? "light" : "dark");
 
-      if (selected === square) {
-        cell.classList.add("selected");
-      }
-
-      if (legalTargets.includes(square)) {
-        cell.classList.add("target");
-      }
+      if (selected === square) cell.classList.add("selected");
+      if (legalTargets.includes(square)) cell.classList.add("target");
 
       if (piece) {
-        cell.textContent =
-          pieces[piece.color + piece.type.toUpperCase()];
+        cell.textContent = pieces[piece.color + piece.type.toUpperCase()];
       }
 
       cell.onclick = () => clickSquare(square);
-
       board.appendChild(cell);
     });
   });
 
-  updateStatus();
+  statusBox.textContent =
+    role === "guest" && remoteStatus && !ended
+      ? remoteStatus
+      : getStatus();
+}
+
+function start() {
+  if (typeof Chess === "undefined" ||
+      typeof Peer === "undefined" ||
+      typeof QRCode === "undefined") {
+    statusBox.textContent = "Fehler beim Laden der Spielbibliotheken.";
+    return;
+  }
+
+  peer = new Peer();
+
+  peer.on("open", id => {
+    if (hostId && role === "waiting") {
+      role = "guest";
+      connectionBox.textContent = "Verbinde mit Spieler Weiß ...";
+      connection = peer.connect(hostId, { reliable: true });
+      setupConnection(connection);
+    } else {
+      role = "host";
+      connectionBox.textContent = "Du spielst Weiß. Warte auf einen Freund.";
+
+      const url = location.origin + location.pathname + "?join=" + id;
+      inviteInput.value = url;
+
+      const qr = document.getElementById("qrcode");
+      qr.innerHTML = "";
+
+      new QRCode(qr, {
+        text: url,
+        width: 180,
+        height: 180
+      });
+    }
+
+    render();
+  });
+
+  peer.on("connection", conn => {
+    if (role !== "host") {
+      conn.close();
+      return;
+    }
+
+    if (connection && connection.open) {
+      conn.close();
+      return;
+    }
+
+    connection = conn;
+    setupConnection(conn);
+  });
+
+  peer.on("error", err => {
+    connectionBox.textContent = "Verbindungsfehler: " + err.type;
+  });
+}
+
+function setupConnection(conn) {
+  conn.on("open", () => {
+    connectionBox.textContent =
+      role === "host"
+        ? "Freund verbunden! Du bist Weiß."
+        : "Verbunden! Du bist Schwarz.";
+
+    if (role === "host") sendState();
+  });
+
+  conn.on("data", data => {
+    if (role === "host" && data.type === "move") {
+      if (ended || game.turn() !== "b") return;
+
+      const move = game.move({
+        from: data.from,
+        to: data.to,
+        promotion: data.promotion || "q"
+      });
+
+      if (move) {
+        sendState();
+        render();
+      }
+    }
+
+    if (role === "guest" && data.type === "state") {
+      game.load(data.fen);
+      ended = !!data.ended;
+      resultText = data.result || "";
+      remoteStatus = data.status || "";
+
+      selected = null;
+      legalTargets = [];
+      pendingPromotion = null;
+      promotionBox.style.display = "none";
+
+      render();
+    }
+
+    if (role === "host" && data.type === "resign") {
+      ended = true;
+      resultText = "Schwarz hat aufgegeben. Weiß gewinnt!";
+      sendState();
+      render();
+    }
+
+    if (role === "guest" && data.type === "resign") {
+      ended = true;
+      resultText = "Weiß hat aufgegeben. Schwarz gewinnt!";
+      render();
+    }
+  });
+
+  conn.on("close", () => {
+    connectionBox.textContent = "Verbindung getrennt.";
+  });
+}
+
+function sendState() {
+  if (connection && connection.open) {
+    connection.send({
+      type: "state",
+      fen: game.fen(),
+      status: getStatus(),
+      ended: ended,
+      result: resultText
+    });
+  }
 }
 
 function clickSquare(square) {
-  const piece = game.get(square);
+  if (ended || pendingPromotion || role === "waiting") return;
+
   const myColor = role === "host" ? "w" : "b";
 
-  if (role === "waiting") return;
-  if (game.game_over()) return;
   if (game.turn() !== myColor) return;
 
-  if (selected && legalTargets.includes(square)) {
-    makeMove(selected, square);
-    selected = null;
-    legalTargets = [];
-    render();
-    return;
-  }
+  const piece = game.get(square);
 
   if (piece && piece.color === myColor) {
     selected = square;
@@ -401,65 +450,137 @@ function clickSquare(square) {
       square: square,
       verbose: true
     }).map(move => move.to);
-  } else {
-    selected = null;
-    legalTargets = [];
-  }
 
-  render();
-}
-
-function makeMove(from, to) {
-  if (role === "host") {
-    const move = game.move({
-      from,
-      to,
-      promotion: "q"
-    });
-
-    if (move) sendState();
-  } else if (connection && connection.open) {
-    connection.send({
-      type: "move",
-      from,
-      to
-    });
-  }
-}
-
-function updateStatus() {
-  if (game.in_checkmate()) {
-    statusBox.textContent =
-      "Schachmatt! " +
-      (game.turn() === "w" ? "Schwarz" : "Weiß") +
-      " gewinnt!";
-  } else if (game.in_draw()) {
-    statusBox.textContent = "Unentschieden!";
-  } else {
-    statusBox.textContent =
-      (game.turn() === "w" ? "Weiß" : "Schwarz") +
-      " ist am Zug" +
-      (game.in_check() ? " – Schach!" : "");
-  }
-}
-
-function newGame() {
-  if (role !== "host") {
-    statusBox.textContent =
-      "Nur Weiß kann ein neues Spiel starten.";
+    render();
     return;
   }
 
-  game.reset();
-  selected = null;
-  legalTargets = [];
+  if (!selected) return;
 
-  if (connection && connection.open) {
-    connection.send({ type: "reset" });
-    sendState();
+  const moves = game.moves({
+    square: selected,
+    verbose: true
+  }).filter(move => move.to === square);
+
+  if (!moves.length) {
+    selected = null;
+    legalTargets = [];
+    render();
+    return;
   }
 
+  if (moves.some(move => move.promotion)) {
+    pendingPromotion = {
+      from: selected,
+      to: square
+    };
+
+    promotionBox.style.display = "block";
+    return;
+  }
+
+  makeMove(selected, square, "q");
+}
+
+function promote(piece) {
+  if (!pendingPromotion) return;
+
+  makeMove(
+    pendingPromotion.from,
+    pendingPromotion.to,
+    piece
+  );
+
+  pendingPromotion = null;
+  promotionBox.style.display = "none";
+}
+
+function makeMove(from, to, promotion) {
+  if (ended) return;
+
+  if (role === "host") {
+    const move = game.move({
+      from: from,
+      to: to,
+      promotion: promotion
+    });
+
+    if (move) {
+      selected = null;
+      legalTargets = [];
+      sendState();
+      render();
+    }
+  } else if (role === "guest" && connection && connection.open) {
+    connection.send({
+      type: "move",
+      from: from,
+      to: to,
+      promotion: promotion
+    });
+
+    selected = null;
+    legalTargets = [];
+    statusBox.textContent = "Zug wird übertragen ...";
+    render();
+  }
+}
+
+function resign() {
+  if (ended || role === "waiting") return;
+
+  if (!confirm("Möchtest du wirklich aufgeben?")) return;
+
+  ended = true;
+
+  if (role === "host") {
+    resultText = "Weiß hat aufgegeben. Schwarz gewinnt!";
+    sendState();
+  } else {
+    resultText = "Du hast aufgegeben. Aufgabe wird übertragen.";
+
+    if (connection && connection.open) {
+      connection.send({ type: "resign" });
+    }
+  }
+
+  selected = null;
+  legalTargets = [];
   render();
+
+  connectionBox.textContent =
+    "Partie beendet. Du kannst eine neue Partie starten.";
+}
+
+function newInvite() {
+  if (peer) {
+    peer.destroy();
+    peer = null;
+  }
+
+  connection = null;
+  role = "waiting";
+  ended = false;
+  resultText = "";
+  remoteStatus = "";
+  selected = null;
+  legalTargets = [];
+  pendingPromotion = null;
+  flipped = false;
+
+  game.reset();
+
+  promotionBox.style.display = "none";
+  inviteInput.value = "";
+  document.getElementById("qrcode").innerHTML = "";
+
+  history.replaceState(null, "", location.pathname);
+
+  connectionBox.textContent = "Erstelle einen neuen QR-Code ...";
+  statusBox.textContent = "Neue Partie wird vorbereitet ...";
+
+  render();
+  start();
 }
 
 function flipBoard() {
@@ -468,7 +589,11 @@ function flipBoard() {
 }
 
 function copyInvite() {
-  if (!inviteInput.value) return;
+  if (!inviteInput.value) {
+    connectionBox.textContent =
+      "Erstelle zuerst einen neuen QR-Code.";
+    return;
+  }
 
   inviteInput.select();
 
@@ -478,7 +603,7 @@ function copyInvite() {
     })
     .catch(() => {
       connectionBox.textContent =
-        "Bitte den Link manuell kopieren.";
+        "Bitte kopiere den Link manuell.";
     });
 }
 
